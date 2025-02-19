@@ -21,6 +21,7 @@ var FSHADER_SOURCE = `
   varying vec2 v_UV;
   uniform vec4 u_FragColor;
   uniform sampler2D u_Sampler0;
+  uniform sampler2D u_Sampler1;
   uniform int u_whichTexture;
   void main() {
 
@@ -35,6 +36,10 @@ var FSHADER_SOURCE = `
     }else if(u_whichTexture == 0){
 
         gl_FragColor = texture2D(u_Sampler0, v_UV);  
+
+    }else if(u_whichTexture == -3){
+
+        gl_FragColor = texture2D(u_Sampler1, v_UV); 
 
     }else{
         gl_FragColor = vec4(1,.2,.2,1);
@@ -55,7 +60,10 @@ let u_GlobalRotateMatrix;
 let u_ViewMatrix;
 let u_ProjectionMatrix;
 let u_Sampler0;
+let u_Sampler1;
 let u_whichTexture;
+let texture0;
+let texture1;
 
 //setup webgl
 //--------------------------------------------------------------------------------
@@ -128,6 +136,12 @@ function connectVariablesToGLSL(){
       console.log('Failed to get the storage location of u_Sampler0');
       return false;
     }
+    //u_Sampler1
+    u_Sampler1 = gl.getUniformLocation(gl.program, 'u_Sampler1');
+    if (!u_Sampler1) {
+      console.log('Failed to get the storage location of u_Sampler1');
+      return false;
+    }
     //u_whichTexture
     u_whichTexture = gl.getUniformLocation(gl.program, 'u_whichTexture');
     if (!u_whichTexture) {
@@ -143,20 +157,24 @@ function connectVariablesToGLSL(){
 //--------------------------------------------------------------------------------
 function initTextures() {
     var image = new Image();  // Create the image object
+    var image2 = new Image();  // Create the image object
     if (!image) {
       console.log('Failed to create the image object');
       return false;
     }
     // Register the event handler to be called on loading an image
-    image.onload = function(){ loadTexture( image); };
+    image.onload = function(){ loadTexture( image, "space"); };
+
+    image2.onload = function(){ loadTexture( image2, "moon"); };
     // Tell the browser to load an image
-    image.src = '../resources/sky.jpg';
+    image.src = '../resources/space.jpg';
+    image2.src = '../resources/moon.jpg';
     return true;
 }
 
 //load textures
 //--------------------------------------------------------------------------------
-function loadTexture( image) {
+function loadTexture( image, type) {
     var texture = gl.createTexture();   // Create a texture object
 
     if (!texture) {
@@ -164,8 +182,14 @@ function loadTexture( image) {
       return false;
     }
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1); // Flip the image's y axis
-    // Enable texture unit0
-    gl.activeTexture(gl.TEXTURE0);
+    
+    if (type == "space") {
+        gl.activeTexture(gl.TEXTURE0);  // Use Texture Unit 0
+        texture0 = texture;
+    } else if (type == "moon") {
+        gl.activeTexture(gl.TEXTURE1);  // Use Texture Unit 1
+        texture1 = texture;
+    }
     // Bind the texture object to the target
     gl.bindTexture(gl.TEXTURE_2D, texture);
   
@@ -175,7 +199,11 @@ function loadTexture( image) {
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
     
     // Set the texture unit 0 to the sampler
-    gl.uniform1i(u_Sampler0, 0);
+    if(type == "space"){
+        gl.uniform1i(u_Sampler0, 0);
+    }else if(type == "moon"){
+        gl.uniform1i(u_Sampler1, 1);
+    }
     
     //gl.clear(gl.COLOR_BUFFER_BIT);   // Clear <canvas>
   
@@ -192,6 +220,7 @@ let g_hatAngle = 0;
 let g_headAngle = 0;
 let g_legAngle = 0;
 let g_animation = false;
+let g_fov = 50;
 
 
 //html ui
@@ -215,9 +244,9 @@ function addActionsforHtmlUI(){
 
     });
 
-    document.getElementById('neck').addEventListener('mousemove', function(){
+    document.getElementById('fov').addEventListener('mousemove', function(){
 
-        g_neckAngle = this.value;
+        g_fov = this.value;
         renderScene();
 
     });
@@ -255,6 +284,9 @@ function main() {
 
     initTextures(gl,0);
 
+    //keyboard register
+    document.onkeydown = keydown;
+
     // Register function (event handler) to be called on a mouse press
     canvas.onmousedown = click;
 
@@ -274,6 +306,19 @@ function main() {
     
     requestAnimationFrame(tick);
 }
+
+//keydown function
+//--------------------------------------------------------------------------------
+function keydown(ev){
+    if(ev.keyCode == 81){
+        g_eye[0] += 0.1;
+    } else if(ev.keyCode == 69){
+        g_eye[0] -= 0.1;
+    }
+
+    renderScene();
+}
+
 
 function convertCoordinatesEventToGL(ev){
 
@@ -370,7 +415,10 @@ var g_points = [];  // The array for the position of a mouse press
 var g_colors = [];  // The array to store the color of a point
 var g_sizes = [];
 
-
+//camera control vars
+var g_eye=[0,0,3];
+var g_at=[0,0,-100];
+var g_up=[0,1,0];
 
 //renderScene function (render all shapes)
 //--------------------------------------------------------------------------------
@@ -381,11 +429,12 @@ function renderScene(){
 
     //projection matrix
     var projMat = new Matrix4();
+    projMat.setPerspective(g_fov, 1*canvas.width/canvas.height,1,100);
     gl.uniformMatrix4fv(u_ProjectionMatrix, false, projMat.elements);
 
     //view matrix
     var viewMat = new Matrix4();
-    viewMat.setLookAt(0,0,-1, 0,0,0, 0,1,0);
+    viewMat.setLookAt(g_eye[0],g_eye[1],g_eye[2], g_at[0],g_at[1],g_at[2], g_up[0],g_up[1],g_up[2]);
     gl.uniformMatrix4fv(u_ViewMatrix, false, viewMat.elements);
 
     //rotate matrix
@@ -396,10 +445,28 @@ function renderScene(){
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
+    //floor
+    var floor = new Cube();
+    floor.color = [0.8,0.8,0.8,1];
+    floor.textureNum = -2;
+    floor.matrix.translate(0,-.75,0);
+    floor.matrix.scale(10,0,10);
+    floor.matrix.translate(-.5,0,-.5);
+    floor.render();
+
+    //sky
+    var sky = new Cube();
+    sky.color[1,0,0,1];
+    sky.textureNum = 0;
+    sky.matrix.scale(50,50,50);
+    sky.matrix.translate(-.5,-.5,-.5);
+    sky.render();
+
+
     //body
     var body = new Cube();
     body.color = [.9, .9, 1, 1];
-    body.textureNum = 0;
+    //body.textureNum = 0;
     body.matrix.translate(-.25, -.3, 0);
     body.matrix.scale(0.45,.5,.5);
     body.render();
