@@ -281,11 +281,6 @@ function main() {
         look(ev);
     }
 
-    //place blocks
-    canvas.onmousedown = function(ev){
-        placeBlock(ev);
-     }
-
     initTextures();
 
     // Specify the color for clearing <canvas>
@@ -313,6 +308,32 @@ function look(ev){
     } else{
        g_camera.panRight(coords[0]*-5);
     }
+}
+
+//add/delete blocks
+//--------------------------------------------------------------------------------
+function placeBlock(){
+    let xPos = g_camera.eye.elements[0]; 
+    let zPos = g_camera.eye.elements[2]; 
+    let x = Math.round(xPos + 16);
+    let y = Math.round(zPos + 16); 
+    if (x >= 0 && x < 32 && y >= 0 && y < 32) {
+        g_map[y][x] += 1; 
+        renderScene();
+    } 
+}
+
+function deleteBlock(){
+    let xPos = g_camera.eye.elements[0]; 
+    let zPos = g_camera.eye.elements[2]; 
+    let x = Math.round(xPos + 16);
+    let y = Math.round(zPos + 16); 
+    if (x >= 0 && x < 32 && y >= 0 && y < 32) {
+        if(g_map[y][x] != 0){
+            g_map[y][x] -= 1
+        } 
+        renderScene();
+    } 
 }
 
 //map stuff
@@ -392,6 +413,13 @@ function keydown(ev){
     //d
     }else if(ev.keyCode == 68){
         g_camera.moveLeft();
+    
+    //c
+    }else if(ev.keyCode == 67){
+        placeBlock();
+    //x
+    }else if(ev.keyCode == 88){
+        deleteBlock();
     }
     renderScene();
 }
