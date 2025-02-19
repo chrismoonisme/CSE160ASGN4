@@ -3,33 +3,31 @@ class Cube{
 
     //class constructor
     constructor(){
-        
         this.type = 'cube';
-
         //this.position = [0.0, 0.0, 0.0];
-
         this.color = [1,1,1,1];
-
         //this.sCount = g_selectedSegments;
-
         //this.size = 5;
-
         this.matrix = new Matrix4();
-
+        //specify texture
+        this.textureNum=-2;
     }
 
     render() {  
-
         //var xy = this.position;
         var rgba = this.color;
         //var size = this.size;
+
+        //specify which texture to use
+        gl.uniform1i(u_whichTexture, this.textureNum);
 
         // Pass the color of a point to u_FragColor variable
         gl.uniform4f(u_FragColor, rgba[0], rgba[1], rgba[2], rgba[3]);
 
         gl.uniformMatrix4fv(u_ModelMatrix, false, this.matrix.elements);
        
-        drawTriangle3D([0.0,0.0,0.0, 1.0,1.0,0.0, 1.0,0.0,0.0 ]);
+        //cube front
+        drawTriangle3DUV([0.0,0.0,0.0, 1.0,1.0,0.0, 1.0,0.0,0.0 ], [1,0,0,1,1,1]);
         drawTriangle3D([0.0,0.0,0.0, 0.0,1.0,0.0, 1.0,1.0,0.0 ]);
 
         drawTriangle3D([0.0,0.0,1.0, 1.0,1.0,1.0, 1.0,0.0,1.0 ]);
