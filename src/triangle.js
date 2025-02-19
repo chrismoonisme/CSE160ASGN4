@@ -61,34 +61,32 @@ function drawTriangle(vertices){
 
 }
 
-function drawTriangle3D(vertices){
+function drawTriangle3D(vertices) {
 
-    var n = 3;
+    var n = vertices.length / 3;
 
     var vertexBuffer = gl.createBuffer();
-
-    if(!vertexBuffer){
-
-        console.log("crash out");
-
+    if (!vertexBuffer) {
+        console.error("Failed to create buffer.");
         return;
-
     }
 
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
 
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 
     gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 0, 0);
 
     gl.enableVertexAttribArray(a_Position);
 
+    // Draw
     gl.drawArrays(gl.TRIANGLES, 0, n);
-
 }
 
+
 function drawTriangle3DUV(vertices, uv){
-    var n = 3;
+
+    var n = vertices.length/3;
 
     var vertexBuffer = gl.createBuffer();
     if(!vertexBuffer){
@@ -102,7 +100,7 @@ function drawTriangle3DUV(vertices, uv){
 
     var uvBuffer = gl.createBuffer();
     if(!uvBuffer){
-        return -1;
+        return;
     }
     gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uv), gl.DYNAMIC_DRAW);
