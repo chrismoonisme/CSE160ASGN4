@@ -246,7 +246,8 @@ function addActionsforHtmlUI(){
 
     document.getElementById('fov').addEventListener('mousemove', function(){
 
-        g_camera.setFOV(this.value);
+        g_fov = this.value;
+        g_camera.setFOV();
         renderScene();
 
     });
