@@ -246,21 +246,7 @@ function addActionsforHtmlUI(){
 
     document.getElementById('fov').addEventListener('mousemove', function(){
 
-        g_fov = this.value;
-        renderScene();
-
-    });
-
-    document.getElementById('head').addEventListener('mousemove', function(){
-
-        g_headAngle = this.value;
-        renderScene();
-
-    });
-
-    document.getElementById('hat').addEventListener('mousemove', function(){
-
-        g_hatAngle = this.value;
+        g_camera.setFOV(this.value);
         renderScene();
 
     });
@@ -270,6 +256,7 @@ function addActionsforHtmlUI(){
 let g_mouseDown = false;
 let g_lastX = 0;
 let g_lastY = 0;
+let g_camera;
 
 //main
 //--------------------------------------------------------------------------------
@@ -283,6 +270,9 @@ function main() {
     addActionsforHtmlUI();
 
     initTextures(gl,0);
+
+    //camera
+    g_camera = new Camera();
 
     //keyboard register
     document.onkeydown = keydown;
@@ -311,11 +301,25 @@ function main() {
 //--------------------------------------------------------------------------------
 function keydown(ev){
     if(ev.keyCode == 81){
-        g_eye[0] += 0.1;
-    } else if(ev.keyCode == 69){
-        g_eye[0] -= 0.1;
+        //g_eye[0] += 0.1;
+        g_camera.panLeft();
+    }else if(ev.keyCode == 69){
+        //g_eye[0] -= 0.1;
+        g_camera.panRight();
+    
+    //w
+    }else if(ev.keyCode == 87){
+        g_camera.moveForward();
+    //s
+    }else if(ev.keyCode == 83){
+        g_camera.moveBack();
+    //a
+    }else if(ev.keyCode == 65){
+        g_camera.moveRight();
+    //d
+    }else if(ev.keyCode == 68){
+        g_camera.moveLeft();
     }
-
     renderScene();
 }
 
@@ -428,13 +432,13 @@ function renderScene(){
     var startTime = performance.now();
 
     //projection matrix
-    var projMat = new Matrix4();
-    projMat.setPerspective(g_fov, 1*canvas.width/canvas.height,1,100);
+    var projMat = g_camera.projMat;
+    //projMat.setPerspective(g_fov, 1*canvas.width/canvas.height,1,100);
     gl.uniformMatrix4fv(u_ProjectionMatrix, false, projMat.elements);
 
     //view matrix
-    var viewMat = new Matrix4();
-    viewMat.setLookAt(g_eye[0],g_eye[1],g_eye[2], g_at[0],g_at[1],g_at[2], g_up[0],g_up[1],g_up[2]);
+    var viewMat = g_camera.viewMat;
+    //viewMat.setLookAt(g_eye[0],g_eye[1],g_eye[2], g_at[0],g_at[1],g_at[2], g_up[0],g_up[1],g_up[2]);
     gl.uniformMatrix4fv(u_ViewMatrix, false, viewMat.elements);
 
     //rotate matrix
